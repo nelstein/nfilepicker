@@ -198,6 +198,15 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.0"
+  nlazyloader:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: HEAD
+      resolved-ref: "4360b4388df3e778cc71d33cd7fe110bc8fce6d1"
+      url: "https://github.com/nelstein/nlazyloader.git"
+    source: git
+    version: "1.0.0+1"
   path:
     dependency: transitive
     description:

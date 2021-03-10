@@ -13,9 +13,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  lazyloader:
+  nlazyloader:
     git:
-      path: https://github.com/nelstein/nlazyloader.git
+      url: https://github.com/nelstein/nlazyloader.git
   file_picker:
   photo_manager:
   cupertino_icons: ^1.0.2

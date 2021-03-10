@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:nlazyloader/nlazyloader.dart';
 import 'provider.dart';
 import 'util.dart';
 import 'dart:convert';
@@ -431,7 +432,6 @@ class _GalleryListPageState extends State<GalleryListPage> {
               ),
             );
     }
-
     return NLazyLoader(
         items: provider.data,
         onLoadMore: () => provider.loadMore(),
