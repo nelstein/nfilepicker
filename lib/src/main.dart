@@ -3,13 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:provider/provider.dart';
 import 'package:nlazyloader/nlazyloader.dart';
 import 'provider.dart';
 import 'util.dart';
-import 'dart:convert';
 import 'dart:async';
-import 'dart:html' as html;
+// import 'dart:html' as html;
 
 class MediaType {
   static const String image = 'image/jpeg;image/jpg;image/png';
@@ -21,91 +19,93 @@ class MediaType {
 class MediaPicker {
   MediaPicker._();
   static void picker(
-    BuildContext context, {
-    List<AssetData> data,
-    String type,
-    int limit,
-    Widget emptyView,
-    Function(List<AssetData>) mulCallback,
+    BuildContext context,
+    PickerProvider provider, {
+    List<AssetData>? data,
+    String? type,
+    int? limit,
+    Widget? emptyView,
+    Function(List<AssetData>)? mulCallback,
   }) async {
-    (kIsWeb
-            ? pickWeb(context, type: type, limit: limit)
-            : Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-                builder: (context) => PickerPage(
-                  type: type,
-                  limit: limit,
-                ),
-              )))
-        .then((data) {
+    (Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
+      builder: (context) => PickerPage(
+        provider: provider,
+        type: type,
+        limit: limit,
+      ),
+    ))).then((data) {
       if (data != null && mulCallback != null) {
         mulCallback(data);
       }
     });
   }
 
-  static Future<List<AssetData>> pickWeb(BuildContext context,
-      {String type = MediaType.all,
-      bool multiple = true,
-      int limit = 2}) async {
-    var imageArr = ['image/jpeg', 'image/jpg', 'image/png', 'video/*'];
-    final html.FileUploadInputElement input = html.FileUploadInputElement();
-    input..accept = type;
-    input..multiple = multiple;
-    input.click();
-    await input.onChange.first;
-    var list = input.files.toList();
-    if (input.files.isEmpty) return null;
-    if (input.files.length > limit) {
-      toaster('Maximum number of files exceeded');
-      list = list.sublist(0, limit - 1);
-    }
+  // static Future<List<AssetData>> pickWeb(
+  //     BuildContext context, PickerProvider provider,
+  //     {String type = MediaType.all,
+  //     bool multiple = true,
+  //     int limit = 2}) async {
+  //   var imageArr = ['image/jpeg', 'image/jpg', 'image/png', 'video/*'];
+  //   final html.FileUploadInputElement input = html.FileUploadInputElement();
+  //   input..accept = type;
+  //   input..multiple = multiple;
+  //   input.click();
+  //   await input.onChange.first;
+  //   var list = input.files.toList();
+  //   if (input.files.isEmpty) return null;
+  //   if (input.files.length > limit) {
+  //     toaster('Maximum number of files exceeded');
+  //     list = list.sublist(0, limit - 1);
+  //   }
 
-    return Future.wait(list
-        .map((element) async {
-          var data = AssetData();
-          if (type == MediaType.image && element.size > 5 * 1024000) {
-            toaster("File can not be larger than 5 MB");
-            return null;
-          }
-          if (!imageArr.contains(element.type)) {
-            toaster("Invalid file format.");
-            return null;
-          }
-          final imageName = element.name;
-          final imagePath = element.relativePath;
-          final _type = element.type;
-          final reader = html.FileReader();
-          var file = input.files.first;
-          reader.readAsDataUrl(file);
+  //   return Future.wait(list
+  //       .map((element) async {
+  //         var data = AssetData();
+  //         if (type == MediaType.image && element.size > 5 * 1024000) {
+  //           toaster("File can not be larger than 5 MB");
+  //           return null;
+  //         }
+  //         if (!imageArr.contains(element.type)) {
+  //           toaster("Invalid file format.");
+  //           return null;
+  //         }
+  //         final imageName = element.name;
+  //         final imagePath = element.relativePath;
+  //         final _type = element.type;
+  //         final reader = html.FileReader();
+  //         var file = input.files.first;
+  //         reader.readAsDataUrl(file);
 
-          await reader.onLoad.first;
-          data.file = file;
-          final encoded = reader.result as String;
-          final stripped =
-              encoded.replaceFirst(RegExp(r'data:image/[^;]+;base64,'), '');
-          data.data = base64.decode(stripped);
-          data.id = DateTime.now().millisecondsSinceEpoch.toString();
-          data.name = imageName;
-          data.path = imagePath;
-          data.mimeType = _type;
-          data.size = element.size;
-          return data;
-        })
-        .toList()
-        .where((element) => element != null)
-        .toList());
-  }
+  //         await reader.onLoad.first;
+  //         data.file = file;
+  //         final encoded = reader.result as String;
+  //         final stripped =
+  //             encoded.replaceFirst(RegExp(r'data:image/[^;]+;base64,'), '');
+  //         data.data = base64.decode(stripped);
+  //         data.id = DateTime.now().millisecondsSinceEpoch.toString();
+  //         data.name = imageName;
+  //         data.path = imagePath;
+  //         data.mimeType = _type;
+  //         data.size = element.size;
+  //         return data;
+  //       })
+  //       .toList()
+  //       .where((element) => element != null)
+  //       .toList());
+  // }
 
-  static Future<List<AssetData>> pick(
-    BuildContext context, {
-    List<AssetData> data,
-    String type,
-    int limit,
-    Widget emptyView,
+  static Future<List<AssetData>?> pick(
+    BuildContext context,
+    PickerProvider provider, {
+    List<AssetData>? data,
+    String? type,
+    int? limit,
+    Widget? emptyView,
   }) async {
     var data =
         await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
       builder: (context) => PickerPage(
+        provider: provider,
         type: type,
         limit: limit,
       ),
@@ -113,8 +113,8 @@ class MediaPicker {
     return data;
   }
 
-  static Future<List<String>> pickDocument() async {
-    FilePickerResult result = await FilePicker.platform.pickFiles(
+  static Future<List<String?>?> pickDocument() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.custom,
         allowedExtensions: [
@@ -135,12 +135,13 @@ class MediaPicker {
 }
 
 class PickerPage extends StatefulWidget {
-  final int limit;
-  final String type;
-
+  final int? limit;
+  final String? type;
+  final PickerProvider? provider;
   const PickerPage({
-    Key key,
+    Key? key,
     this.limit,
+    this.provider,
     this.type,
   }) : super(key: key);
 
@@ -154,21 +155,23 @@ class PickerPageState extends State<PickerPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   List<AssetEntity> data = [];
   bool _isInit = true;
-  PickerProvider provider;
+  PickerProvider? provider;
+
   @override
-  void didChangeDependencies() {
-    provider = Provider.of<PickerProvider>(context);
+  void initState() {
+    provider = widget.provider;
     super.didChangeDependencies();
     if (!_isInit) {
-      provider.refreshGallery();
+      provider!.refreshGallery();
     }
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     dropHeader() {
       return Container(
-          child: isValid(provider.pathList)
+          child: isValid(provider!.pathList)
               ? DropdownButtonHideUnderline(
                   child: DropdownButton(
                       iconEnabledColor:
@@ -189,7 +192,7 @@ class PickerPageState extends State<PickerPage> {
                               overflow: TextOverflow.ellipsis,
                               style: Theme.of(context)
                                   .textTheme
-                                  .headline6
+                                  .headline6!
                                   .copyWith(
                                       color: Theme.of(context).brightness ==
                                               Brightness.light
@@ -199,12 +202,12 @@ class PickerPageState extends State<PickerPage> {
                           );
                         }
 
-                        return provider.pathList.map<Widget>((e) {
+                        return provider!.pathList.map<Widget>((e) {
                           return item(e);
                         }).toList();
                       },
-                      value: provider.current,
-                      items: provider.pathList.map((e) {
+                      value: provider!.current,
+                      items: provider!.pathList.map((e) {
                         var val = e.name != 'Recent' ? e.name : 'Gallery';
                         return DropdownMenuItem(
                           child: Text(
@@ -213,8 +216,8 @@ class PickerPageState extends State<PickerPage> {
                           value: e,
                         );
                       }).toList(),
-                      onChanged: (val) {
-                        provider.onPathChange(val);
+                      onChanged: (dynamic val) {
+                        provider!.onPathChange(val);
                       }),
                 )
               : Text(''));
@@ -222,7 +225,7 @@ class PickerPageState extends State<PickerPage> {
 
     return WillPopScope(
       onWillPop: () {
-        provider.clearPickedAsset();
+        provider!.clearPickedAsset();
         return Future.value(true);
       },
       child: Scaffold(
@@ -242,18 +245,18 @@ class PickerPageState extends State<PickerPage> {
                   ),
                   onPressed: () async {
                     var files =
-                        await convertToAssetData(provider.selectedData ?? []);
+                        await convertToAssetData(provider!.selectedData);
                     Navigator.of(context).pop(files);
                   })
             ],
           ),
           backgroundColor: Colors.black87,
-          body: provider.current == null
-              ? provider.pathList.isEmpty
+          body: provider!.current == null
+              ? provider!.pathList.isEmpty
                   ? buildEmpty('List is empty')
                   : buildLoading(context, color: Colors.white)
               : GalleryListPage(
-                  path: provider.current,
+                  path: provider!.current,
                   provider: provider,
                   limit: widget.limit,
                   type: widget.type)),
@@ -263,21 +266,21 @@ class PickerPageState extends State<PickerPage> {
 
 class GalleryListPage extends StatefulWidget {
   const GalleryListPage(
-      {Key key, this.path, this.provider, this.limit, this.type})
+      {Key? key, this.path, this.provider, this.limit, this.type})
       : super(key: key);
 
-  final AssetPathEntity path;
-  final PickerProvider provider;
-  final int limit;
-  final String type;
+  final AssetPathEntity? path;
+  final PickerProvider? provider;
+  final int? limit;
+  final String? type;
 
   @override
   _GalleryListPageState createState() => _GalleryListPageState();
 }
 
 class _GalleryListPageState extends State<GalleryListPage> {
-  AssetPathEntity get path => widget.path;
-  PickerProvider provider;
+  AssetPathEntity? get path => widget.path;
+  PickerProvider? provider;
 
   @override
   void initState() {
@@ -287,23 +290,23 @@ class _GalleryListPageState extends State<GalleryListPage> {
 
   _onItemClick(AssetEntity data) {
     {
-      if (provider.containsEntity(data)) {
-        return provider.removeSelectEntity(data);
+      if (provider!.containsEntity(data)) {
+        return provider!.removeSelectEntity(data);
       } else {
         if (data.type == AssetType.video &&
-            provider.selectedData
+            provider!.selectedData
                 .where((e) => e.type == AssetType.image)
                 .isEmpty)
-          return provider.selectedData.isEmpty
-              ? provider.addSelectEntity(data)
+          return provider!.selectedData.isEmpty
+              ? provider!.addSelectEntity(data)
               : SnackBar(content: Text('Maximum number selected'));
 
         if (data.type == AssetType.image &&
-            provider.selectedData
+            provider!.selectedData
                 .where((e) => e.type == AssetType.video)
                 .isEmpty) {
-          return provider.selectedData.length < widget.limit
-              ? provider.addSelectEntity(data)
+          return provider!.selectedData.length < widget.limit!
+              ? provider!.addSelectEntity(data)
               : SnackBar(content: Text('Maximum number selected'));
         }
         return SnackBar(
@@ -315,12 +318,12 @@ class _GalleryListPageState extends State<GalleryListPage> {
   @override
   Widget build(BuildContext context) {
     Widget _buildText(AssetEntity entity) {
-      var isSelected = provider.containsEntity(entity);
-      Widget child;
+      var isSelected = provider!.containsEntity(entity);
+      Widget? child;
       BoxDecoration decoration;
       if (isSelected) {
         child = Text(
-          (provider.indexOfSelected(entity) + 1).toString(),
+          (provider!.indexOfSelected(entity) + 1).toString(),
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 12.0, color: Colors.black87),
         );
@@ -371,13 +374,13 @@ class _GalleryListPageState extends State<GalleryListPage> {
     }
 
     _loadMore() async {
-      await provider.loadMore();
+      await provider!.loadMore();
       setState(() {});
     }
 
     Widget _buildItem(BuildContext context, int index) {
-      final noMore = provider.noMore;
-      if (!noMore && index == provider.count) {
+      final noMore = provider!.noMore;
+      if (!noMore && index == provider!.count) {
         _loadMore();
         return buildLoading(context);
       }
@@ -402,7 +405,7 @@ class _GalleryListPageState extends State<GalleryListPage> {
           onTap: () async {
             if (data.id == 'camera') {
               var file =
-                  await ImagePicker().getImage(source: ImageSource.camera);
+                  await (ImagePicker().getImage(source: ImageSource.camera) as FutureOr<PickedFile>);
               AssetData entity = AssetData(
                 path: file.path,
                 mimeType: 'image',
@@ -413,7 +416,7 @@ class _GalleryListPageState extends State<GalleryListPage> {
         );
       }
 
-      var data = provider.data[index];
+      var data = provider!.data[index];
       return data.id == 'camera'
           ? defaultItem(data)
           : RepaintBoundary(
@@ -425,23 +428,24 @@ class _GalleryListPageState extends State<GalleryListPage> {
                       entity: data,
                       size: 200,
                     ),
-                    _buildMask(provider.containsEntity(data)),
+                    _buildMask(provider!.containsEntity(data)),
                     _buildSelected(data),
                   ],
                 ),
               ),
             );
     }
+
     return NLazyLoader(
-        items: provider.data,
-        onLoadMore: () => provider.loadMore(),
+        items: provider!.data,
+        onLoadMore: () => provider!.loadMore() as Future<bool>,
         child: CustomScrollView(slivers: [
           SliverGrid.count(
               crossAxisCount: 3,
               mainAxisSpacing: 2,
               crossAxisSpacing: 2,
               children: List.generate(
-                provider.data?.length,
+                provider!.data.length,
                 (int index) {
                   return _buildItem(context, index);
                 },

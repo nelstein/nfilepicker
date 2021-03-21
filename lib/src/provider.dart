@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 class PickerProvider extends ChangeNotifier {
-  Map<AssetPathEntity, AssetPage> _pathMap = {};
+  Map<AssetPathEntity?, AssetPage> _pathMap = {};
   List<AssetPathEntity> pathList = [];
   List<AssetEntity> selectedData = [];
 
-  AssetPathEntity _current;
-  AssetPathEntity get current => _current;
+  AssetPathEntity? _current;
+  AssetPathEntity? get current => _current;
 
-  RequestType _type;
+  RequestType? _type;
 
-  set current(AssetPathEntity current) {
+  set current(AssetPathEntity? current) {
     _current = current;
     if (_pathMap[current] == null) {
       final paging = AssetPage(current);
@@ -19,7 +19,7 @@ class PickerProvider extends ChangeNotifier {
     }
   }
 
-  void refreshGallery({RequestType type, bool clear = true}) async {
+  void refreshGallery({RequestType? type, bool clear = true}) async {
     if (clear) {
       _pathMap.clear();
       pathList.clear();
@@ -42,7 +42,7 @@ class PickerProvider extends ChangeNotifier {
     }
   }
 
-  onPathChange(AssetPathEntity path) async {
+  onPathChange(AssetPathEntity? path) async {
     if (path != current) {
       current = path;
       await loadMore();
@@ -50,9 +50,9 @@ class PickerProvider extends ChangeNotifier {
     }
   }
 
-  String get currentGalleryName {
+  String? get currentGalleryName {
     if (current == null) return null;
-    return current.isAll ? current?.name : "Gallery";
+    return current!.isAll ? current?.name : "Gallery";
   }
 
   List<AssetEntity> get data => [
@@ -62,7 +62,6 @@ class PickerProvider extends ChangeNotifier {
             height: 100,
             typeInt: 0,
             orientation: 90,
-            duration: null,
             width: 100),
       ].followedBy(_pathMap[current]?.data ?? []).toList();
 
@@ -140,11 +139,11 @@ class PickerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  AssetPage getPaging() => _pathMap[current];
+  AssetPage? getPaging() => _pathMap[current];
 
   bool get noMore => getPaging()?.noMore ?? false;
 
-  int get count => data?.length ?? 0;
+  int get count => data.length;
 }
 
 class AssetPage {
@@ -152,7 +151,7 @@ class AssetPage {
 
   List<AssetEntity> data = [];
 
-  final AssetPathEntity path;
+  final AssetPathEntity? path;
 
   final int pageCount;
 
@@ -165,7 +164,7 @@ class AssetPage {
       return;
     }
 
-    var data = await path.getAssetListPaged(page, pageCount);
+    var data = await path!.getAssetListPaged(page, pageCount);
     if (data.length == 0) {
       noMore = true;
     }

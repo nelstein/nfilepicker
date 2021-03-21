@@ -4,25 +4,23 @@ import 'package:extended_image/extended_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_editor/image_editor.dart';
-import 'package:isolate/isolate.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'dart:collection';
-import 'package:video_compress/video_compress.dart';
 
 class AssetData {
   ///ios id与path不一致，Android id与path相同
-  String id;
-  String name;
-  String path;
-  String mimeType;
-  int time;
-  int width;
-  int height;
+  String? id;
+  String? name;
+  String? path;
+  String? mimeType;
+  int? time;
+  int? width;
+  int? height;
   dynamic file;
-  Duration duration;
-  Uint8List data;
-  Map youtube;
-  int size;
+  Duration? duration;
+  Uint8List? data;
+  Map? youtube;
+  int? size;
 
   AssetData(
       {this.id,
@@ -70,7 +68,7 @@ class AssetData {
     };
   }
 
-  bool get isImage => mimeType.contains("image") ?? false;
+  bool get isImage => mimeType?.contains("image") ?? false;
 
   bool get isYoutube => youtube != null;
 
@@ -89,44 +87,42 @@ class AssetData {
   }
 }
 
-final loadBalancer = LoadBalancer.create(10, IsolateRunner.spawn);
-
 Future<List<AssetData>> convertToAssetData(List<AssetEntity> data) async {
   return Future.wait(data.map((e) async {
     return AssetData(
-        path: (await e.file).path,
+        path: (await e.file)!.path,
         height: e.height,
         width: e.width,
         name: e.id,
         mimeType: e.type == AssetType.image ? 'image' : 'video',
         duration: Duration(seconds: e.duration),
-        size: await (await e.file).length(),
+        size: await (await e.file)!.length(),
         file: (await e.file),
         time: e.createDateTime.millisecondsSinceEpoch);
   }).toList());
 }
 
-Future<MediaInfo> trimVideo(String path) async {
-  try {
-    final info = await VideoCompress.compressVideo(
-      path,
-      quality:
-          VideoQuality.MediumQuality, // default(VideoQuality.DefaultQuality)
-      deleteOrigin: false, // default(false)
-    );
-    return info;
-  } catch (e) {
-    print(e);
-    return null;
-  }
-}
+// Future<MediaInfo> trimVideo(String path) async {
+//   try {
+//     final info = await VideoCompress.compressVideo(
+//       path,
+//       quality:
+//           VideoQuality.MediumQuality, // default(VideoQuality.DefaultQuality)
+//       deleteOrigin: false, // default(false)
+//     );
+//     return info;
+//   } catch (e) {
+//     print(e);
+//     return null;
+//   }
+// }
 
-Future<List<int>> cropImageDataWithDartLibrary(
-    {ExtendedImageEditorState state}) async {
+Future<List<int>?> cropImageDataWithDartLibrary(
+    {required ExtendedImageEditorState state}) async {
   print("dart library start cropping");
 
-  final Rect rect = state.getCropRect();
-  final EditActionDetails action = state.editAction;
+  final Rect? rect = state.getCropRect();
+  final EditActionDetails action = state.editAction!;
 
   final rotateAngle = action.rotateAngle.toInt();
   final flipHorizontal = action.flipY;
@@ -136,7 +132,7 @@ Future<List<int>> cropImageDataWithDartLibrary(
   var time1 = DateTime.now();
   ImageEditorOption option = ImageEditorOption();
 
-  if (action.needCrop) option.addOption(ClipOption.fromRect(rect));
+  if (action.needCrop) option.addOption(ClipOption.fromRect(rect!));
 
   if (action.needFlip)
     option.addOption(
@@ -212,10 +208,10 @@ Widget videoBadge(BuildContext context, AssetType type, Duration duration) {
 }
 
 class ImageItem extends StatelessWidget {
-  final AssetEntity entity;
+  final AssetEntity? entity;
   final int size;
   const ImageItem({
-    Key key,
+    Key? key,
     this.entity,
     this.size = 64,
   }) : super(key: key);
@@ -227,9 +223,9 @@ class ImageItem extends StatelessWidget {
       return _buildImageItem(context, thumb);
     }
 
-    return FutureBuilder<Uint8List>(
-      future: entity.thumbDataWithSize(size, size),
-      builder: (BuildContext context, AsyncSnapshot<Uint8List> snapshot) {
+    return FutureBuilder<Uint8List?>(
+      future: entity!.thumbDataWithSize(size, size),
+      builder: (BuildContext context, AsyncSnapshot<Uint8List?> snapshot) {
         var futureData = snapshot.data;
         if (snapshot.connectionState == ConnectionState.done &&
             futureData != null) {
@@ -249,12 +245,9 @@ class ImageItem extends StatelessWidget {
       fit: BoxFit.cover,
     );
     var badge;
-    final badgeBuilder = videoBadge(context, entity.type, entity.videoDuration);
-    if (badgeBuilder == null) {
-      badge = Container();
-    } else {
-      badge = badgeBuilder;
-    }
+    final badgeBuilder =
+        videoBadge(context, entity!.type, entity!.videoDuration);
+    badge = badgeBuilder;
 
     return Stack(
       children: <Widget>[
@@ -270,17 +263,17 @@ class ImageItem extends StatelessWidget {
 class ImageLruCache {
   static LRUMap<_ImageCacheEntity, Uint8List> _map = LRUMap(500);
 
-  static Uint8List getData(AssetEntity entity, [int size = 64]) {
+  static Uint8List? getData(AssetEntity? entity, [int size = 64]) {
     return _map.get(_ImageCacheEntity(entity, size));
   }
 
-  static void setData(AssetEntity entity, int size, Uint8List list) {
+  static void setData(AssetEntity? entity, int size, Uint8List list) {
     _map.put(_ImageCacheEntity(entity, size), list);
   }
 }
 
 class _ImageCacheEntity {
-  AssetEntity entity;
+  AssetEntity? entity;
   int size;
 
   _ImageCacheEntity(this.entity, this.size);
@@ -306,12 +299,12 @@ typedef EvictionHandler<K, V>(K key, V value);
 class LRUMap<K, V> {
   final LinkedHashMap<K, V> _map = LinkedHashMap<K, V>();
   final int _maxSize;
-  final EvictionHandler<K, V> _handler;
+  final EvictionHandler<K, V?>? _handler;
 
   LRUMap(this._maxSize, [this._handler]);
 
-  V get(K key) {
-    V value = _map.remove(key);
+  V? get(K key) {
+    V? value = _map.remove(key);
     if (value != null) {
       _map[key] = value;
     }
@@ -323,9 +316,9 @@ class LRUMap<K, V> {
     _map[key] = value;
     if (_map.length > _maxSize) {
       K evictedKey = _map.keys.first;
-      V evictedValue = _map.remove(evictedKey);
+      V? evictedValue = _map.remove(evictedKey);
       if (_handler != null) {
-        _handler(evictedKey, evictedValue);
+        _handler!(evictedKey, evictedValue);
       }
     }
   }
@@ -333,23 +326,6 @@ class LRUMap<K, V> {
   void remove(K key) {
     _map.remove(key);
   }
-}
-
-class ProgressColors {
-  ProgressColors({
-    Color playedColor: const Color.fromRGBO(256, 256, 256, 1),
-    Color bufferedColor: const Color.fromRGBO(256, 256, 256, 0.5),
-    Color handleColor: const Color.fromRGBO(255, 255, 255, 1),
-    Color backgroundColor: const Color.fromRGBO(200, 200, 200, 0.5),
-  })  : playedPaint = Paint()..color = playedColor,
-        bufferedPaint = Paint()..color = bufferedColor,
-        handlePaint = Paint()..color = handleColor,
-        backgroundPaint = Paint()..color = backgroundColor;
-
-  final Paint playedPaint;
-  final Paint bufferedPaint;
-  final Paint handlePaint;
-  final Paint backgroundPaint;
 }
 
 String formatDuration(Duration position) {
@@ -389,7 +365,7 @@ bool isValid(item) {
   return item != null && item.isNotEmpty;
 }
 
-Container buildLoading(BuildContext context, {Color color, double width}) {
+Container buildLoading(BuildContext context, {Color? color, double? width}) {
   return new Container(
     child: new Padding(
       padding: EdgeInsets.only(top: 20.0),
@@ -397,7 +373,7 @@ Container buildLoading(BuildContext context, {Color color, double width}) {
         child: Theme.of(context).platform != TargetPlatform.iOS
             ? CircularProgressIndicator(
                 strokeWidth: width ?? 2.0,
-                valueColor: new AlwaysStoppedAnimation<Color>(color ?? null),
+                valueColor: new AlwaysStoppedAnimation<Color?>(color ?? null),
               )
             : CupertinoActivityIndicator(),
       ),
@@ -405,7 +381,7 @@ Container buildLoading(BuildContext context, {Color color, double width}) {
   );
 }
 
-Container buildEmpty(String text, {double top}) {
+Container buildEmpty(String? text, {double? top}) {
   return Container(
     padding: EdgeInsets.only(top: top ?? 80),
     child: Center(
