@@ -97,7 +97,7 @@ Future<List<AssetData>> convertToAssetData(List<AssetEntity> data) async {
         mimeType: e.type == AssetType.image ? 'image' : 'video',
         duration: Duration(seconds: e.duration),
         size: await (await e.file)!.length(),
-        file: (await e.file),
+        data: await e.originBytes,
         time: e.createDateTime.millisecondsSinceEpoch);
   }).toList());
 }

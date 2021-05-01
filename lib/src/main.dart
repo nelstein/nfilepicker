@@ -7,7 +7,6 @@ import 'package:nlazyloader/nlazyloader.dart';
 import 'provider.dart';
 import 'util.dart';
 import 'dart:async';
-// import 'dart:html' as html;
 
 class MediaType {
   static const String image = 'image/jpeg;image/jpg;image/png';
@@ -27,13 +26,9 @@ class MediaPicker {
     Widget? emptyView,
     Function(List<AssetData>)? mulCallback,
   }) async {
-    (Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-      builder: (context) => PickerPage(
-        provider: provider,
-        type: type,
-        limit: limit,
-      ),
-    ))).then((data) {
+    pick(context, provider,
+            data: data, type: type, limit: limit, emptyView: emptyView)
+        .then((data) {
       if (data != null && mulCallback != null) {
         mulCallback(data);
       }
@@ -102,18 +97,42 @@ class MediaPicker {
     int? limit,
     Widget? emptyView,
   }) async {
-    var data =
-        await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(
-      builder: (context) => PickerPage(
-        provider: provider,
-        type: type,
-        limit: limit,
-      ),
-    ));
+    List<AssetData> data = [];
+    if (kIsWeb) {
+      var _data = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.image,
+        allowCompression: true,
+      );
+      if (_data != null && _data.count > 0) {
+        List<PlatformFile> files = _data.files;
+        if (_data.count > 2) {
+          files = _data.files.sublist(0, 1);
+          toaster('Maximum of two images allowed');
+        }
+        data = files
+            .map((e) => AssetData(
+                id: e.name,
+                path: e.path,
+                data: e.bytes,
+                size: e.size,
+                mimeType: 'image'))
+            .toList();
+      }
+    } else {
+      data = await Navigator.of(context, rootNavigator: true)
+          .push(MaterialPageRoute(
+        builder: (context) => PickerPage(
+          provider: provider,
+          type: type,
+          limit: limit,
+        ),
+      ));
+    }
     return data;
   }
 
-  static Future<List<String?>?> pickDocument() async {
+  static Future<List<AssetData>> pickDocument() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.custom,
@@ -130,7 +149,15 @@ class MediaPicker {
           'xls',
           'xlsx'
         ]);
-    return result?.paths;
+    if (result == null || result.count == 0) return [];
+    return result.files
+        .map((e) => AssetData(
+            id: e.name,
+            path: e.path,
+            data: e.bytes,
+            size: e.size,
+            mimeType: 'image'))
+        .toList();
   }
 }
 
@@ -405,7 +432,8 @@ class _GalleryListPageState extends State<GalleryListPage> {
           onTap: () async {
             if (data.id == 'camera') {
               var file =
-                  await (ImagePicker().getImage(source: ImageSource.camera) as FutureOr<PickedFile>);
+                  await (ImagePicker().getImage(source: ImageSource.camera)
+                      as FutureOr<PickedFile>);
               AssetData entity = AssetData(
                 path: file.path,
                 mimeType: 'image',
