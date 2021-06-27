@@ -90,13 +90,13 @@ class AssetData {
 Future<List<AssetData>> convertToAssetData(List<AssetEntity> data) async {
   return Future.wait(data.map((e) async {
     return AssetData(
-        path: (await e.file)!.path,
+        path: (await e.file)?.path,
         height: e.height,
         width: e.width,
         name: e.id,
         mimeType: e.type == AssetType.image ? 'image' : 'video',
         duration: Duration(seconds: e.duration),
-        size: await (await e.file)!.length(),
+        size: await (await e.file)?.length(),
         data: await e.originBytes,
         time: e.createDateTime.millisecondsSinceEpoch);
   }).toList());
