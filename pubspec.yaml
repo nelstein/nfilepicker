@@ -17,7 +17,7 @@ dependencies:
     git:
       url: https://github.com/nelstein/nlazyloader.git
   file_picker: ^3.0.0
-  photo_manager: ^1.2.1
+  photo_manager: ^1.2.5
   cupertino_icons: ^1.0.2
   extended_image: ^3.0.0
   image_editor: ^1.0.0
